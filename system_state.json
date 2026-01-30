@@ -1,0 +1,554 @@
+{
+  "bankroll": 160.0,
+  "initial_bankroll": 200.0,
+  "peak_bankroll": 200.0,
+  "todays_games": [
+    {
+      "game_id": "0022400001",
+      "home_team": "Los Angeles Lakers",
+      "away_team": "Golden State Warriors",
+      "home_team_id": 1610612747,
+      "away_team_id": 1610612744,
+      "game_time": "19:30",
+      "status": "scheduled",
+      "home_elo": 1600,
+      "away_elo": 1595,
+      "predicted_home_prob": 0.5074085245127153,
+      "predicted_margin": 0,
+      "predicted_total": 220,
+      "model_confidence": 0.5074085245127153,
+      "home_odds": 1.91,
+      "away_odds": 1.91,
+      "spread": -2.5,
+      "total_line": 220.0,
+      "home_trends": {
+        "last_n": 10,
+        "record": "7-3",
+        "win_pct": 0.7,
+        "current_streak": "W4",
+        "avg_scored": 111.5,
+        "avg_allowed": 111.5,
+        "home_record": "5-0",
+        "away_record": "2-3"
+      },
+      "away_trends": {
+        "last_n": 10,
+        "record": "7-3",
+        "win_pct": 0.7,
+        "current_streak": "W1",
+        "avg_scored": 117.3,
+        "avg_allowed": 117.3,
+        "home_record": "4-1",
+        "away_record": "3-2"
+      },
+      "h2h": {
+        "total_games": 10,
+        "team1_wins": 3,
+        "team2_wins": 7,
+        "avg_total": 226.4,
+        "avg_margin": 0.0,
+        "last_5": [
+          {
+            "date": "OCT 21, 2025",
+            "score": "109-109",
+            "winner": "Golden State Warriors"
+          },
+          {
+            "date": "OCT 19, 2021",
+            "score": "114-114",
+            "winner": "Golden State Warriors"
+          },
+          {
+            "date": "OCT 18, 2022",
+            "score": "109-109",
+            "winner": "Golden State Warriors"
+          },
+          {
+            "date": "NOV 29, 2017",
+            "score": "123-123",
+            "winner": "Golden State Warriors"
+          },
+          {
+            "date": "NOV 25, 2016",
+            "score": "85-85",
+            "winner": "Golden State Warriors"
+          }
+        ]
+      },
+      "home_injuries": [],
+      "away_injuries": [],
+      "analysis_summary": {
+        "home_profile": {
+          "win_pct": 0.515748031496063,
+          "home_win_pct": 0.5804749340369393,
+          "avg_scored": 112.27427821522309,
+          "avg_allowed": 112.27427821522309
+        },
+        "away_profile": {
+          "win_pct": 0.5968379446640316,
+          "away_win_pct": 0.5264550264550265,
+          "avg_scored": 114.58234519104084,
+          "avg_allowed": 114.58234519104084
+        },
+        "home_recent": {
+          "last_n": 10,
+          "record": "7-3",
+          "win_pct": 0.7,
+          "current_streak": "W4",
+          "avg_scored": 111.5,
+          "avg_allowed": 111.5,
+          "home_record": "5-0",
+          "away_record": "2-3"
+        },
+        "away_recent": {
+          "last_n": 10,
+          "record": "7-3",
+          "win_pct": 0.7,
+          "current_streak": "W1",
+          "avg_scored": 117.3,
+          "avg_allowed": 117.3,
+          "home_record": "4-1",
+          "away_record": "3-2"
+        },
+        "h2h": {
+          "total_games": 10,
+          "team1_wins": 3,
+          "team2_wins": 7,
+          "avg_total": 226.4,
+          "avg_margin": 0.0,
+          "last_5": [
+            {
+              "date": "OCT 21, 2025",
+              "score": "109-109",
+              "winner": "Golden State Warriors"
+            },
+            {
+              "date": "OCT 19, 2021",
+              "score": "114-114",
+              "winner": "Golden State Warriors"
+            },
+            {
+              "date": "OCT 18, 2022",
+              "score": "109-109",
+              "winner": "Golden State Warriors"
+            },
+            {
+              "date": "NOV 29, 2017",
+              "score": "123-123",
+              "winner": "Golden State Warriors"
+            },
+            {
+              "date": "NOV 25, 2016",
+              "score": "85-85",
+              "winner": "Golden State Warriors"
+            }
+          ]
+        }
+      },
+      "features": {
+        "game_id": "0022400001",
+        "home_team": "Los Angeles Lakers",
+        "away_team": "Golden State Warriors",
+        "game_date": "2026-01-29 00:05:14.366969",
+        "home_win_pct_last10": 0.7,
+        "away_win_pct_last10": 0.7,
+        "home_home_record": 0.5804749340369393,
+        "away_road_record": 0.5264550264550265,
+        "home_off_rating": 110.0,
+        "home_def_rating": 110.0,
+        "away_off_rating": 110.0,
+        "away_def_rating": 110.0,
+        "home_net_rating": 0.0,
+        "away_net_rating": 0.0,
+        "home_pace": 100.0,
+        "away_pace": 100.0,
+        "home_rest_days": 1,
+        "away_rest_days": 1,
+        "home_b2b": false,
+        "away_b2b": false,
+        "home_injury_impact": 0.0,
+        "away_injury_impact": 0.0,
+        "home_elo": 1600,
+        "away_elo": 1595,
+        "home_streak": 4,
+        "away_streak": 1,
+        "home_ats_pct": 0.5,
+        "away_ats_pct": 0.5,
+        "h2h_home_win_pct": 0.5,
+        "h2h_games_count": 0,
+        "avg_points_scored": 112.27427821522309,
+        "avg_points_allowed": 112.27427821522309
+      }
+    },
+    {
+      "game_id": "0022400002",
+      "home_team": "Boston Celtics",
+      "away_team": "Miami Heat",
+      "home_team_id": 1610612738,
+      "away_team_id": 1610612748,
+      "game_time": "20:00",
+      "status": "scheduled",
+      "home_elo": 1680,
+      "away_elo": 1590,
+      "predicted_home_prob": 0.6682597245000196,
+      "predicted_margin": 0,
+      "predicted_total": 220,
+      "model_confidence": 0.6682597245000196,
+      "home_odds": 1.91,
+      "away_odds": 1.91,
+      "spread": -2.5,
+      "total_line": 220.0,
+      "home_trends": {
+        "last_n": 10,
+        "record": "8-2",
+        "win_pct": 0.8,
+        "current_streak": "W1",
+        "avg_scored": 115.2,
+        "avg_allowed": 115.2,
+        "home_record": "5-0",
+        "away_record": "3-2"
+      },
+      "away_trends": {
+        "last_n": 10,
+        "record": "3-7",
+        "win_pct": 0.3,
+        "current_streak": "W1",
+        "avg_scored": 111.8,
+        "avg_allowed": 111.8,
+        "home_record": "1-3",
+        "away_record": "2-4"
+      },
+      "h2h": {
+        "total_games": 10,
+        "team1_wins": 6,
+        "team2_wins": 4,
+        "avg_total": 221.6,
+        "avg_margin": 0.0,
+        "last_5": [
+          {
+            "date": "OCT 28, 2017",
+            "score": "96-96",
+            "winner": "Boston Celtics"
+          },
+          {
+            "date": "OCT 27, 2023",
+            "score": "119-119",
+            "winner": "Boston Celtics"
+          },
+          {
+            "date": "OCT 21, 2022",
+            "score": "111-111",
+            "winner": "Boston Celtics"
+          },
+          {
+            "date": "NOV 30, 2022",
+            "score": "134-134",
+            "winner": "Boston Celtics"
+          },
+          {
+            "date": "NOV 28, 2016",
+            "score": "112-112",
+            "winner": "Boston Celtics"
+          }
+        ]
+      },
+      "home_injuries": [],
+      "away_injuries": [],
+      "analysis_summary": {
+        "home_profile": {
+          "win_pct": 0.6583769633507853,
+          "home_win_pct": 0.7131578947368421,
+          "avg_scored": 113.23821989528795,
+          "avg_allowed": 113.23821989528795
+        },
+        "away_profile": {
+          "win_pct": 0.5391644908616188,
+          "away_win_pct": 0.4753246753246753,
+          "avg_scored": 108.74151436031332,
+          "avg_allowed": 108.74151436031332
+        },
+        "home_recent": {
+          "last_n": 10,
+          "record": "8-2",
+          "win_pct": 0.8,
+          "current_streak": "W1",
+          "avg_scored": 115.2,
+          "avg_allowed": 115.2,
+          "home_record": "5-0",
+          "away_record": "3-2"
+        },
+        "away_recent": {
+          "last_n": 10,
+          "record": "3-7",
+          "win_pct": 0.3,
+          "current_streak": "W1",
+          "avg_scored": 111.8,
+          "avg_allowed": 111.8,
+          "home_record": "1-3",
+          "away_record": "2-4"
+        },
+        "h2h": {
+          "total_games": 10,
+          "team1_wins": 6,
+          "team2_wins": 4,
+          "avg_total": 221.6,
+          "avg_margin": 0.0,
+          "last_5": [
+            {
+              "date": "OCT 28, 2017",
+              "score": "96-96",
+              "winner": "Boston Celtics"
+            },
+            {
+              "date": "OCT 27, 2023",
+              "score": "119-119",
+              "winner": "Boston Celtics"
+            },
+            {
+              "date": "OCT 21, 2022",
+              "score": "111-111",
+              "winner": "Boston Celtics"
+            },
+            {
+              "date": "NOV 30, 2022",
+              "score": "134-134",
+              "winner": "Boston Celtics"
+            },
+            {
+              "date": "NOV 28, 2016",
+              "score": "112-112",
+              "winner": "Boston Celtics"
+            }
+          ]
+        }
+      },
+      "features": {
+        "game_id": "0022400002",
+        "home_team": "Boston Celtics",
+        "away_team": "Miami Heat",
+        "game_date": "2026-01-29 00:05:15.023081",
+        "home_win_pct_last10": 0.8,
+        "away_win_pct_last10": 0.3,
+        "home_home_record": 0.7131578947368421,
+        "away_road_record": 0.4753246753246753,
+        "home_off_rating": 110.0,
+        "home_def_rating": 110.0,
+        "away_off_rating": 110.0,
+        "away_def_rating": 110.0,
+        "home_net_rating": 0.0,
+        "away_net_rating": 0.0,
+        "home_pace": 100.0,
+        "away_pace": 100.0,
+        "home_rest_days": 1,
+        "away_rest_days": 1,
+        "home_b2b": false,
+        "away_b2b": false,
+        "home_injury_impact": 0.0,
+        "away_injury_impact": 0.0,
+        "home_elo": 1680,
+        "away_elo": 1590,
+        "home_streak": 1,
+        "away_streak": 1,
+        "home_ats_pct": 0.5,
+        "away_ats_pct": 0.5,
+        "h2h_home_win_pct": 0.5,
+        "h2h_games_count": 0,
+        "avg_points_scored": 113.23821989528795,
+        "avg_points_allowed": 113.23821989528795
+      }
+    },
+    {
+      "game_id": "0022400003",
+      "home_team": "Denver Nuggets",
+      "away_team": "Phoenix Suns",
+      "home_team_id": 1610612743,
+      "away_team_id": 1610612756,
+      "game_time": "21:00",
+      "status": "scheduled",
+      "home_elo": 1660,
+      "away_elo": 1640,
+      "predicted_home_prob": 0.4888751691676806,
+      "predicted_margin": 0,
+      "predicted_total": 220,
+      "model_confidence": 0.5111248308323194,
+      "home_odds": 1.91,
+      "away_odds": 1.91,
+      "spread": -2.5,
+      "total_line": 220.0,
+      "home_trends": {
+        "last_n": 10,
+        "record": "5-5",
+        "win_pct": 0.5,
+        "current_streak": "L2",
+        "avg_scored": 111.3,
+        "avg_allowed": 111.3,
+        "home_record": "2-0",
+        "away_record": "3-5"
+      },
+      "away_trends": {
+        "last_n": 10,
+        "record": "6-4",
+        "win_pct": 0.6,
+        "current_streak": "W2",
+        "avg_scored": 111.3,
+        "avg_allowed": 111.3,
+        "home_record": "3-3",
+        "away_record": "3-1"
+      },
+      "h2h": {
+        "total_games": 10,
+        "team1_wins": 8,
+        "team2_wins": 2,
+        "avg_total": 229.2,
+        "avg_margin": 0.0,
+        "last_5": [
+          {
+            "date": "OCT 25, 2025",
+            "score": "133-133",
+            "winner": "Denver Nuggets"
+          },
+          {
+            "date": "OCT 25, 2019",
+            "score": "108-108",
+            "winner": "Denver Nuggets"
+          },
+          {
+            "date": "OCT 20, 2021",
+            "score": "110-110",
+            "winner": "Denver Nuggets"
+          },
+          {
+            "date": "OCT 20, 2018",
+            "score": "119-119",
+            "winner": "Denver Nuggets"
+          },
+          {
+            "date": "NOV 29, 2025",
+            "score": "130-130",
+            "winner": "Denver Nuggets"
+          }
+        ]
+      },
+      "home_injuries": [],
+      "away_injuries": [],
+      "analysis_summary": {
+        "home_profile": {
+          "win_pct": 0.6161879895561357,
+          "home_win_pct": 0.6981627296587927,
+          "avg_scored": 114.07180156657964,
+          "avg_allowed": 114.07180156657964
+        },
+        "away_profile": {
+          "win_pct": 0.48433420365535246,
+          "away_win_pct": 0.43342036553524804,
+          "avg_scored": 111.88381201044386,
+          "avg_allowed": 111.88381201044386
+        },
+        "home_recent": {
+          "last_n": 10,
+          "record": "5-5",
+          "win_pct": 0.5,
+          "current_streak": "L2",
+          "avg_scored": 111.3,
+          "avg_allowed": 111.3,
+          "home_record": "2-0",
+          "away_record": "3-5"
+        },
+        "away_recent": {
+          "last_n": 10,
+          "record": "6-4",
+          "win_pct": 0.6,
+          "current_streak": "W2",
+          "avg_scored": 111.3,
+          "avg_allowed": 111.3,
+          "home_record": "3-3",
+          "away_record": "3-1"
+        },
+        "h2h": {
+          "total_games": 10,
+          "team1_wins": 8,
+          "team2_wins": 2,
+          "avg_total": 229.2,
+          "avg_margin": 0.0,
+          "last_5": [
+            {
+              "date": "OCT 25, 2025",
+              "score": "133-133",
+              "winner": "Denver Nuggets"
+            },
+            {
+              "date": "OCT 25, 2019",
+              "score": "108-108",
+              "winner": "Denver Nuggets"
+            },
+            {
+              "date": "OCT 20, 2021",
+              "score": "110-110",
+              "winner": "Denver Nuggets"
+            },
+            {
+              "date": "OCT 20, 2018",
+              "score": "119-119",
+              "winner": "Denver Nuggets"
+            },
+            {
+              "date": "NOV 29, 2025",
+              "score": "130-130",
+              "winner": "Denver Nuggets"
+            }
+          ]
+        }
+      },
+      "features": {
+        "game_id": "0022400003",
+        "home_team": "Denver Nuggets",
+        "away_team": "Phoenix Suns",
+        "game_date": "2026-01-29 00:05:15.721772",
+        "home_win_pct_last10": 0.5,
+        "away_win_pct_last10": 0.6,
+        "home_home_record": 0.6981627296587927,
+        "away_road_record": 0.43342036553524804,
+        "home_off_rating": 110.0,
+        "home_def_rating": 110.0,
+        "away_off_rating": 110.0,
+        "away_def_rating": 110.0,
+        "home_net_rating": 0.0,
+        "away_net_rating": 0.0,
+        "home_pace": 100.0,
+        "away_pace": 100.0,
+        "home_rest_days": 1,
+        "away_rest_days": 1,
+        "home_b2b": false,
+        "away_b2b": false,
+        "home_injury_impact": 0.0,
+        "away_injury_impact": 0.0,
+        "home_elo": 1660,
+        "away_elo": 1640,
+        "home_streak": -2,
+        "away_streak": 2,
+        "home_ats_pct": 0.5,
+        "away_ats_pct": 0.5,
+        "h2h_home_win_pct": 0.5,
+        "h2h_games_count": 0,
+        "avg_points_scored": 114.07180156657964,
+        "avg_points_allowed": 114.07180156657964
+      }
+    }
+  ],
+  "active_bets_count": 4,
+  "last_update": "2026-01-29T10:20:01.233729",
+  "bankroll_history": [
+    {
+      "date": "2026-01-28T05:49:42.396283",
+      "value": 200.0
+    },
+    {
+      "date": "2026-01-28T06:33:13.874370",
+      "value": 170.0
+    },
+    {
+      "date": "2026-01-29T00:05:25.238741",
+      "value": 160.0
+    }
+  ]
+}

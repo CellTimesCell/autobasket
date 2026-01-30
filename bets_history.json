@@ -1,0 +1,16 @@
+[
+  {
+    "bet_id": "BET_0022400002_1769670325",
+    "game_id": "0022400002",
+    "home_team": "Boston Celtics",
+    "away_team": "Miami Heat",
+    "bet_side": "home",
+    "bet_team": "Boston Celtics",
+    "odds": 1.91,
+    "amount": 10,
+    "edge": 0.14469951507593581,
+    "predicted_prob": 0.6682597245000196,
+    "placed_at": "2026-01-29T00:05:25.221623",
+    "status": "pending"
+  }
+]
