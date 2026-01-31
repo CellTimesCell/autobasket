@@ -693,7 +693,8 @@ class AutoBasketSystem:
                     logger.info(f"   🔥 Sharp money on {home}")
                 elif expert_consensus.get('sharp_picks', {}).get('away', 0) > 0:
                     logger.info(f"   🔥 Sharp money on {away}")
-        except:
+        except Exception as e:
+            logger.debug(f"Could not get expert consensus: {e}")
             expert_consensus = {}
         
         # Проверяем дисциплину
@@ -999,7 +1000,15 @@ Confidence: {anomaly.confidence:.0%}
 
             # Записываем результат для обучения
             try:
-                game_id_int = int(game.game_id) if game.game_id.isdigit() else hash(game.game_id) % 10000000
+                # Fix: handle both string and int game_id types
+                gid = game.game_id
+                if isinstance(gid, int):
+                    game_id_int = gid
+                elif isinstance(gid, str) and gid.isdigit():
+                    game_id_int = int(gid)
+                else:
+                    game_id_int = hash(str(gid)) % 10000000
+
                 self.prediction_tracker.record_result(
                     game_id=game_id_int,
                     home_won=home_won,
@@ -1357,11 +1366,15 @@ Confidence: {anomaly.confidence:.0%}
     def _parse_record(self, record: str) -> float:
         """Парсит рекорд типа '7-3' в win%"""
         try:
+            if not record or '-' not in record:
+                return 0.5
             parts = record.split('-')
-            wins = int(parts[0])
-            losses = int(parts[1])
+            if len(parts) < 2:
+                return 0.5
+            wins = int(parts[0].strip())
+            losses = int(parts[1].strip())
             return wins / (wins + losses) if wins + losses > 0 else 0.5
-        except:
+        except (ValueError, IndexError, AttributeError):
             return 0.5
     
     def _parse_streak(self, streak: str) -> int:
@@ -1489,7 +1502,7 @@ def select_trading_mode() -> str:
 
     try:
         mode_choice = input("Select mode [1-2, default=1]: ").strip()
-    except:
+    except (EOFError, KeyboardInterrupt):
         mode_choice = "1"
 
     if mode_choice == "2":
@@ -1501,7 +1514,7 @@ def select_trading_mode() -> str:
 
         try:
             confirm = input("\nType 'I UNDERSTAND' to continue: ").strip()
-        except:
+        except (EOFError, KeyboardInterrupt):
             confirm = ""
 
         if confirm != "I UNDERSTAND":
@@ -1539,7 +1552,7 @@ if __name__ == "__main__":
 
     try:
         choice = input("Select option [1-5]: ").strip()
-    except:
+    except (EOFError, KeyboardInterrupt):
         choice = "1"
 
     if choice == "5":

@@ -258,12 +258,6 @@ class BankrollManager:
             'active_bets': len(self.active_bets),
             'today_bets': self.today_bets_count
         }
-        """Сбрасывает дневные счетчики (вызывать в начале нового дня)"""
-        self.current_date = date.today()
-        self.day_start_balance = self.bankroll
-        self.today_bets_count = 0
-        self.today_risked = 0.0
-        self._record_bankroll_snapshot("day_start")
     
     def _record_bankroll_snapshot(self, event: str):
         """Записывает снимок банкролла"""
