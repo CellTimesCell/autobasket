@@ -283,8 +283,8 @@ with st.sidebar:
     # Навигация
     page = st.radio(
         "📍 Navigation",
-        ["📊 Overview", "🎯 Today's Games", "📈 Bet History", 
-         "🔍 Analytics", "⚠️ Live Monitor", "⚙️ Settings"]
+        ["📊 Overview", "🎯 Today's Games", "📈 Bet History",
+         "📋 Reports", "🔍 Analytics", "⚠️ Live Monitor", "⚙️ Settings"]
     )
     
     st.divider()
@@ -588,6 +588,201 @@ elif page == "📈 Bet History":
     
     else:
         st.info("No bet history yet.")
+
+
+elif page == "📋 Reports":
+    st.title("📋 Performance Reports")
+
+    bets = load_bets_history()
+    br = bankroll_data
+
+    # Period selector
+    period = st.selectbox("Select Period", ["Today", "Last 7 Days", "Last 30 Days", "All Time"])
+
+    # Filter bets by period
+    now = datetime.now()
+    if period == "Today":
+        cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "Last 7 Days":
+        cutoff = now - timedelta(days=7)
+    elif period == "Last 30 Days":
+        cutoff = now - timedelta(days=30)
+    else:
+        cutoff = datetime.min
+
+    filtered_bets = []
+    for bet in bets:
+        try:
+            placed_at = datetime.fromisoformat(bet.get('placed_at', '').replace('Z', '+00:00'))
+            if placed_at.replace(tzinfo=None) >= cutoff:
+                filtered_bets.append(bet)
+        except:
+            pass
+
+    settled_bets = [b for b in filtered_bets if b.get('status') in ['won', 'lost']]
+
+    st.divider()
+
+    # Summary metrics
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    total_bets = len(filtered_bets)
+    wins = len([b for b in settled_bets if b.get('status') == 'won'])
+    losses = len([b for b in settled_bets if b.get('status') == 'lost'])
+    pending = len([b for b in filtered_bets if b.get('status') == 'pending'])
+    total_wagered = sum(b.get('amount', 0) for b in filtered_bets)
+    total_profit = sum(b.get('profit', 0) for b in settled_bets)
+
+    with col1:
+        st.metric("Total Bets", total_bets)
+    with col2:
+        win_rate = wins / (wins + losses) * 100 if (wins + losses) > 0 else 0
+        st.metric("Win Rate", f"{win_rate:.1f}%", f"{wins}W-{losses}L")
+    with col3:
+        st.metric("Wagered", f"${total_wagered:.2f}")
+    with col4:
+        profit_color = "normal" if total_profit >= 0 else "inverse"
+        st.metric("Profit/Loss", f"${total_profit:+.2f}")
+    with col5:
+        roi = (total_profit / total_wagered * 100) if total_wagered > 0 else 0
+        st.metric("ROI", f"{roi:+.1f}%")
+
+    st.divider()
+
+    # Detailed report
+    tab1, tab2, tab3 = st.tabs(["📊 Summary", "📈 Charts", "📋 Details"])
+
+    with tab1:
+        st.subheader(f"📊 {period} Summary")
+
+        if settled_bets:
+            # Performance breakdown
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("### Bet Breakdown")
+                avg_bet = total_wagered / total_bets if total_bets > 0 else 0
+                avg_odds = sum(b.get('odds', 0) for b in filtered_bets) / total_bets if total_bets > 0 else 0
+                avg_edge = sum(b.get('edge', 0) for b in filtered_bets) / total_bets if total_bets > 0 else 0
+
+                st.write(f"**Average Bet Size:** ${avg_bet:.2f}")
+                st.write(f"**Average Odds:** {avg_odds:.2f}")
+                st.write(f"**Average Edge:** {avg_edge:.1%}")
+                st.write(f"**Pending Bets:** {pending}")
+
+            with col2:
+                st.markdown("### Bankroll Impact")
+                st.write(f"**Starting Bankroll:** ${br['initial']:.2f}")
+                st.write(f"**Current Bankroll:** ${br['current']:.2f}")
+                st.write(f"**Peak Bankroll:** ${br['peak']:.2f}")
+                st.write(f"**Total P&L:** ${br['current'] - br['initial']:+.2f}")
+                pnl_pct = ((br['current'] - br['initial']) / br['initial'] * 100) if br['initial'] > 0 else 0
+                st.write(f"**P&L %:** {pnl_pct:+.1f}%")
+
+            # Best and worst bets
+            if settled_bets:
+                st.divider()
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.markdown("### 🏆 Best Bets")
+                    best = sorted(settled_bets, key=lambda x: x.get('profit', 0), reverse=True)[:3]
+                    for b in best:
+                        profit = b.get('profit', 0)
+                        if profit > 0:
+                            st.success(f"✅ {b.get('bet_team', '?')} @ {b.get('odds', 0):.2f} → +${profit:.2f}")
+
+                with col2:
+                    st.markdown("### 📉 Worst Bets")
+                    worst = sorted(settled_bets, key=lambda x: x.get('profit', 0))[:3]
+                    for b in worst:
+                        profit = b.get('profit', 0)
+                        if profit < 0:
+                            st.error(f"❌ {b.get('bet_team', '?')} @ {b.get('odds', 0):.2f} → ${profit:.2f}")
+        else:
+            st.info(f"No settled bets for {period.lower()}")
+
+    with tab2:
+        st.subheader(f"📈 {period} Charts")
+
+        if settled_bets:
+            # Cumulative profit chart
+            profits = []
+            cumulative = 0
+            dates = []
+            for b in sorted(settled_bets, key=lambda x: x.get('placed_at', '')):
+                cumulative += b.get('profit', 0)
+                profits.append(cumulative)
+                dates.append(b.get('placed_at', ''))
+
+            if profits:
+                fig = px.line(x=range(len(profits)), y=profits,
+                            title="Cumulative Profit Over Bets",
+                            labels={'x': 'Bet #', 'y': 'Cumulative Profit ($)'})
+                fig.add_hline(y=0, line_dash="dash", line_color="gray")
+                fig.update_traces(line_color='green' if profits[-1] > 0 else 'red', line_width=3)
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Win/Loss pie chart
+            col1, col2 = st.columns(2)
+
+            with col1:
+                fig_pie = px.pie(
+                    values=[wins, losses],
+                    names=['Wins', 'Losses'],
+                    title="Win/Loss Distribution",
+                    color_discrete_sequence=['#28a745', '#dc3545']
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
+
+            with col2:
+                # Profit by team
+                team_profits = {}
+                for b in settled_bets:
+                    team = b.get('bet_team', 'Unknown')
+                    team_profits[team] = team_profits.get(team, 0) + b.get('profit', 0)
+
+                if team_profits:
+                    sorted_teams = sorted(team_profits.items(), key=lambda x: x[1], reverse=True)[:10]
+                    fig_bar = px.bar(
+                        x=[t[0] for t in sorted_teams],
+                        y=[t[1] for t in sorted_teams],
+                        title="Profit by Team",
+                        labels={'x': 'Team', 'y': 'Profit ($)'},
+                        color=[t[1] for t in sorted_teams],
+                        color_continuous_scale=['red', 'yellow', 'green']
+                    )
+                    st.plotly_chart(fig_bar, use_container_width=True)
+        else:
+            st.info(f"No data for charts in {period.lower()}")
+
+    with tab3:
+        st.subheader(f"📋 {period} Bet Details")
+
+        if filtered_bets:
+            df = pd.DataFrame(filtered_bets)
+            cols = ['placed_at', 'bet_team', 'amount', 'odds', 'edge', 'status', 'profit', 'final_score']
+            cols = [c for c in cols if c in df.columns]
+
+            if 'placed_at' in df.columns:
+                df['placed_at'] = pd.to_datetime(df['placed_at']).dt.strftime('%m/%d %H:%M')
+            if 'edge' in df.columns:
+                df['edge'] = df['edge'].apply(lambda x: f"{x:.1%}" if x else "")
+            if 'profit' in df.columns:
+                df['profit'] = df['profit'].apply(lambda x: f"${x:+.2f}" if x else "-")
+
+            st.dataframe(df[cols], use_container_width=True, hide_index=True)
+
+            # Export button
+            csv = df[cols].to_csv(index=False)
+            st.download_button(
+                label="📥 Export to CSV",
+                data=csv,
+                file_name=f"autobasket_report_{period.lower().replace(' ', '_')}.csv",
+                mime="text/csv"
+            )
+        else:
+            st.info(f"No bets for {period.lower()}")
 
 
 elif page == "🔍 Analytics":

@@ -176,11 +176,26 @@ class DisciplineSettings:
     max_consecutive_bets: int = 5
     min_time_between_bets_minutes: int = 10
     mandatory_break_after_hours: int = 4
-    
+
     # Tilt detection
     losing_streak_warning: int = 3
     losing_streak_stop: int = 5
     chase_loss_multiplier: float = 1.5  # Если ставка > 1.5x предыдущей после проигрыша
+
+
+@dataclass
+class TimezoneSettings:
+    """Настройки часового пояса"""
+    # MST = Mountain Standard Time (UTC-7)
+    # MDT = Mountain Daylight Time (UTC-6) - летнее время
+    display_timezone: str = "America/Denver"  # MST/MDT автоматически
+
+    # Время начала мониторинга (минуты до начала игры)
+    monitoring_start_before_game: int = 15
+
+    # Активные часы для ставок (в локальном timezone)
+    active_hours_start: int = 10  # 10:00 AM
+    active_hours_end: int = 23    # 11:00 PM
 
 
 # === ГЛАВНЫЙ КОНФИГ ===
@@ -198,7 +213,8 @@ class Config:
     api: APISettings = field(default_factory=APISettings)
     backtest: BacktestSettings = field(default_factory=BacktestSettings)
     discipline: DisciplineSettings = field(default_factory=DisciplineSettings)
-    
+    timezone: TimezoneSettings = field(default_factory=TimezoneSettings)
+
     # Режим работы
     debug_mode: bool = False
     simulation_mode: bool = True  # Если True - виртуальные деньги

@@ -23,6 +23,15 @@ from datetime import datetime, date, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
 
+# Timezone support
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+except ImportError:
+    from backports.zoneinfo import ZoneInfo  # Fallback
+
+# MST/MDT timezone (Mountain Time)
+MST = ZoneInfo("America/Denver")
+
 # Загружаем .env
 from dotenv import load_dotenv
 load_dotenv()
@@ -143,8 +152,26 @@ class AutoBasketSystem:
             anomaly_callback=self._on_anomaly_detected
         )
         
-        # Notifications
-        self.notifications = NotificationManager()
+        # Notifications - загружаем токены из .env
+        telegram_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
+        discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
+
+        self.notifications = NotificationManager(
+            telegram_token=telegram_token,
+            telegram_chat_id=telegram_chat_id,
+            discord_webhook=discord_webhook
+        )
+
+        if telegram_token and telegram_chat_id:
+            logger.info("📱 Telegram notifications: ENABLED")
+        else:
+            logger.warning("📱 Telegram notifications: DISABLED (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env)")
+
+        if discord_webhook:
+            logger.info("💬 Discord notifications: ENABLED")
+        else:
+            logger.info("💬 Discord notifications: DISABLED")
         
         # Discipline
         self.discipline = DisciplineManager()
@@ -171,30 +198,113 @@ class AutoBasketSystem:
         logger.info("✅ System initialized")
     
     def _load_bets_history(self):
-        """Загружает историю ставок из файла"""
+        """Загружает историю ставок из файла и восстанавливает active_bets"""
         if self.bets_file.exists():
             try:
                 with open(self.bets_file, 'r') as f:
                     self.todays_bets = json.load(f)
                 logger.info(f"Loaded {len(self.todays_bets)} bets from history")
-            except:
+
+                # CRITICAL FIX: Восстанавливаем active_bets из pending ставок!
+                pending_bets = [b for b in self.todays_bets if b.get('status') == 'pending']
+                for bet in pending_bets:
+                    # Используем комбинацию команд как ключ для поиска
+                    match_key = self._make_match_key(bet.get('home_team', ''), bet.get('away_team', ''))
+                    if match_key:
+                        self.active_bets[match_key] = bet
+                        # Также сохраняем по game_id для совместимости
+                        if bet.get('game_id'):
+                            self.active_bets[str(bet['game_id'])] = bet
+
+                if pending_bets:
+                    logger.info(f"✅ Restored {len(pending_bets)} pending bets to active_bets")
+
+            except Exception as e:
+                logger.warning(f"Could not load bets history: {e}")
                 self.todays_bets = []
-        
+
         # Загружаем состояние системы
         if self.state_file.exists():
             try:
                 with open(self.state_file, 'r') as f:
                     state = json.load(f)
-                
+
                 # Восстанавливаем bankroll history
                 self.bankroll_history = state.get('bankroll_history', [])
-                
-                # Восстанавливаем active_bets если были
-                # todays_games восстановятся при следующем цикле
-                
+
+                # Восстанавливаем bankroll если был сохранён
+                saved_bankroll = state.get('bankroll')
+                if saved_bankroll and saved_bankroll > 0:
+                    self.bankroll.bankroll = saved_bankroll
+                    logger.info(f"💰 Restored bankroll: ${saved_bankroll:.2f}")
+
                 logger.info(f"Restored state: bankroll history has {len(self.bankroll_history)} entries")
             except Exception as e:
                 logger.warning(f"Could not restore state: {e}")
+
+    def _make_match_key(self, home_team: str, away_team: str) -> str:
+        """Создаёт уникальный ключ матча для сопоставления ставок"""
+        if not home_team or not away_team:
+            return ""
+        # Нормализуем названия команд для сравнения
+        home_norm = self._normalize_team_name(home_team)
+        away_norm = self._normalize_team_name(away_team)
+        return f"{away_norm}@{home_norm}"
+
+    def _normalize_team_name(self, name: str) -> str:
+        """Нормализует название команды для сравнения"""
+        # Убираем лишние пробелы и приводим к нижнему регистру
+        name = name.lower().strip()
+
+        # Маппинг разных вариантов названий
+        name_mapping = {
+            'la lakers': 'lakers',
+            'los angeles lakers': 'lakers',
+            'la clippers': 'clippers',
+            'los angeles clippers': 'clippers',
+            'golden state warriors': 'warriors',
+            'gs warriors': 'warriors',
+            'boston celtics': 'celtics',
+            'miami heat': 'heat',
+            'denver nuggets': 'nuggets',
+            'phoenix suns': 'suns',
+            'milwaukee bucks': 'bucks',
+            'philadelphia 76ers': '76ers',
+            'philly 76ers': '76ers',
+            'minnesota timberwolves': 'timberwolves',
+            'sacramento kings': 'kings',
+            'detroit pistons': 'pistons',
+            'new york knicks': 'knicks',
+            'ny knicks': 'knicks',
+            'cleveland cavaliers': 'cavaliers',
+            'oklahoma city thunder': 'thunder',
+            'okc thunder': 'thunder',
+            'dallas mavericks': 'mavericks',
+            'memphis grizzlies': 'grizzlies',
+            'atlanta hawks': 'hawks',
+            'brooklyn nets': 'nets',
+            'new orleans pelicans': 'pelicans',
+            'chicago bulls': 'bulls',
+            'houston rockets': 'rockets',
+            'indiana pacers': 'pacers',
+            'orlando magic': 'magic',
+            'portland trail blazers': 'blazers',
+            'trail blazers': 'blazers',
+            'san antonio spurs': 'spurs',
+            'toronto raptors': 'raptors',
+            'utah jazz': 'jazz',
+            'washington wizards': 'wizards',
+            'charlotte hornets': 'hornets',
+        }
+
+        # Проверяем маппинг
+        for full_name, short_name in name_mapping.items():
+            if full_name in name or name in full_name:
+                return short_name
+
+        # Если не нашли в маппинге, берём последнее слово (обычно это nickname)
+        parts = name.split()
+        return parts[-1] if parts else name
     
     def _record_bankroll(self):
         """Записывает текущий банкролл в историю"""
@@ -730,7 +840,12 @@ class AutoBasketSystem:
         
         # Сохраняем
         self.todays_bets.append(bet)
+        # Сохраняем по game_id
         self.active_bets[str(game['game_id'])] = bet
+        # CRITICAL: Также сохраняем по match_key для сопоставления с ESPN
+        match_key = self._make_match_key(game['home_team'], game['away_team'])
+        if match_key:
+            self.active_bets[match_key] = bet
         
         # Записываем предсказание для обучения
         self.prediction_tracker.record_prediction(
@@ -842,63 +957,136 @@ Confidence: {anomaly.confidence:.0%}
     def check_and_settle_bets(self):
         """Проверяет завершенные игры и рассчитывает ставки"""
         logger.info("\n🔍 Checking for finished games...")
-        
+
+        if not self.active_bets:
+            logger.info("   No active bets to settle")
+            return
+
         # Получаем текущие результаты
         live_games = self.live_monitor.update()
-        
+
+        settled_count = 0
         for game in live_games:
-            game_id = game.game_id
-            
-            if game_id not in self.active_bets:
-                continue
-            
             if game.status != GameStatus.FINAL:
                 continue
-            
-            bet = self.active_bets[game_id]
-            
+
+            # CRITICAL FIX: Ищем ставку по названиям команд, а не только по ID
+            bet = self._find_bet_for_game(game)
+            if not bet:
+                continue
+
+            logger.info(f"🎯 Found finished game: {game.away_team} @ {game.home_team}")
+            logger.info(f"   Final score: {game.score.away_score} - {game.score.home_score}")
+
             # Определяем результат
             home_won = game.score.home_score > game.score.away_score
             bet_won = (bet['bet_side'] == 'home' and home_won) or \
                       (bet['bet_side'] == 'away' and not home_won)
-            
+
             # Рассчитываем
             if bet_won:
                 profit = bet['amount'] * (bet['odds'] - 1)
                 self.bankroll.bankroll += bet['amount'] + profit
                 bet['status'] = 'won'
                 bet['profit'] = profit
+                bet['final_score'] = f"{game.score.away_score}-{game.score.home_score}"
                 logger.info(f"✅ WON: {bet['bet_team']} - Profit: ${profit:.2f}")
             else:
                 bet['status'] = 'lost'
                 bet['profit'] = -bet['amount']
+                bet['final_score'] = f"{game.score.away_score}-{game.score.home_score}"
                 logger.info(f"❌ LOST: {bet['bet_team']} - Loss: ${bet['amount']:.2f}")
-            
+
             # Записываем результат для обучения
-            self.prediction_tracker.record_result(
-                game_id=int(game_id),
-                home_won=home_won,
-                margin=game.score.margin
-            )
-            
+            try:
+                game_id_int = int(game.game_id) if game.game_id.isdigit() else hash(game.game_id) % 10000000
+                self.prediction_tracker.record_result(
+                    game_id=game_id_int,
+                    home_won=home_won,
+                    margin=game.score.margin
+                )
+            except Exception as e:
+                logger.warning(f"Could not record result for learning: {e}")
+
             # Записываем в discipline
             self.discipline.record_result(bet_won)
-            
-            # Убираем из активных
-            del self.active_bets[game_id]
-            
+
+            # Убираем из активных - по всем возможным ключам
+            self._remove_bet_from_active(bet, game)
+
+            settled_count += 1
+
+            # Обновляем ставку в todays_bets
+            for i, b in enumerate(self.todays_bets):
+                if b.get('bet_id') == bet.get('bet_id'):
+                    self.todays_bets[i] = bet
+                    break
+
             # Уведомление
             emoji = "✅" if bet_won else "❌"
             self.notifications.send_message(
                 f"{emoji} BET SETTLED\n"
                 f"{bet['away_team']} @ {bet['home_team']}\n"
+                f"Score: {game.score.away_score}-{game.score.home_score}\n"
                 f"Result: {'WON' if bet_won else 'LOST'}\n"
                 f"P&L: ${bet['profit']:+.2f}\n"
                 f"Bankroll: ${self.bankroll.bankroll:.2f}"
             )
-        
+
+        if settled_count > 0:
+            logger.info(f"\n📊 Settled {settled_count} bet(s)")
+            self._record_bankroll()
+
         # Сохраняем состояние после settle
         self._save_state()
+
+    def _find_bet_for_game(self, game) -> Optional[Dict]:
+        """Находит нашу ставку для данной игры по названиям команд"""
+        # Создаём ключ матча
+        match_key = self._make_match_key(game.home_team, game.away_team)
+
+        # Сначала пробуем найти по match_key
+        if match_key in self.active_bets:
+            return self.active_bets[match_key]
+
+        # Пробуем по game_id (на случай если совпадают)
+        if game.game_id in self.active_bets:
+            return self.active_bets[game.game_id]
+
+        # Если не нашли напрямую, ищем по нормализованным названиям
+        game_home_norm = self._normalize_team_name(game.home_team)
+        game_away_norm = self._normalize_team_name(game.away_team)
+
+        for key, bet in self.active_bets.items():
+            bet_home_norm = self._normalize_team_name(bet.get('home_team', ''))
+            bet_away_norm = self._normalize_team_name(bet.get('away_team', ''))
+
+            # Проверяем совпадение команд
+            if bet_home_norm == game_home_norm and bet_away_norm == game_away_norm:
+                return bet
+
+        return None
+
+    def _remove_bet_from_active(self, bet: Dict, game):
+        """Удаляет ставку из active_bets по всем возможным ключам"""
+        keys_to_remove = []
+
+        # Собираем все ключи которые нужно удалить
+        match_key = self._make_match_key(game.home_team, game.away_team)
+        if match_key in self.active_bets:
+            keys_to_remove.append(match_key)
+
+        if game.game_id in self.active_bets:
+            keys_to_remove.append(game.game_id)
+
+        bet_game_id = str(bet.get('game_id', ''))
+        if bet_game_id and bet_game_id in self.active_bets:
+            keys_to_remove.append(bet_game_id)
+
+        # Удаляем
+        for key in keys_to_remove:
+            if key in self.active_bets:
+                del self.active_bets[key]
     
     # =========================================================================
     # ОБУЧЕНИЕ
@@ -958,14 +1146,18 @@ Confidence: {anomaly.confidence:.0%}
         """Выводит сводку по играм с данными из базы знаний"""
         logger.info("\n" + "=" * 60)
         logger.info("🏀 TODAY'S GAMES SUMMARY")
+        logger.info(f"⏰ Current time: {self.get_mst_time().strftime('%I:%M %p MST')}")
         logger.info("=" * 60)
-        
+
         for game in self.todays_games:
             home = game['home_team']
             away = game['away_team']
             prob = game['predicted_home_prob']
-            
+            game_time = game.get('game_time', 'TBD')
+            mst_time = self.format_game_time_mst(game_time) if game_time != 'TBD' else 'TBD'
+
             logger.info(f"\n{away} @ {home}")
+            logger.info(f"   ⏰ Game time: {mst_time}")
             logger.info(f"   📊 Prediction: {prob:.1%} home win")
             logger.info(f"   📈 Spread: {home} {game['spread']}")
             logger.info(f"   🎯 Total: {game['total_line']}")
@@ -998,10 +1190,27 @@ Confidence: {anomaly.confidence:.0%}
         logger.info("\n" + "🌅 " * 20)
         logger.info("🌅 STARTING NEW DAILY CYCLE")
         logger.info("🌅 " * 20)
-        
+
+        # Сначала проверяем и settle'им оставшиеся ставки с предыдущего дня
+        if self.active_bets:
+            logger.info(f"\n🔄 Checking {len(self.active_bets)} pending bets from previous day...")
+            self.check_and_settle_bets()
+
         # Сбрасываем дневные данные
         self.todays_games = []
-        self.todays_bets = []
+
+        # CRITICAL FIX: НЕ стираем pending ставки! Фильтруем только settled
+        pending_bets = [b for b in self.todays_bets if b.get('status') == 'pending']
+        settled_bets = [b for b in self.todays_bets if b.get('status') != 'pending']
+
+        if pending_bets:
+            logger.info(f"⏳ Keeping {len(pending_bets)} pending bets")
+        if settled_bets:
+            logger.info(f"📊 Previous day settled: {len([b for b in settled_bets if b.get('status') == 'won'])} won, {len([b for b in settled_bets if b.get('status') == 'lost'])} lost")
+
+        # Начинаем новый день с pending ставками
+        self.todays_bets = pending_bets
+
         self.bankroll.reset_daily()
         
         # 1. Собираем данные об играх
@@ -1191,10 +1400,130 @@ Confidence: {anomaly.confidence:.0%}
             'injury': injury.injury_type
         }
 
+    # =========================================================================
+    # TIMEZONE HELPERS
+    # =========================================================================
+
+    def get_mst_time(self) -> datetime:
+        """Возвращает текущее время в MST"""
+        return datetime.now(MST)
+
+    def convert_to_mst(self, dt: datetime) -> datetime:
+        """Конвертирует datetime в MST"""
+        if dt.tzinfo is None:
+            # Assume UTC if no timezone
+            dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+        return dt.astimezone(MST)
+
+    def format_game_time_mst(self, game_time_str: str) -> str:
+        """Форматирует время игры в MST"""
+        try:
+            # Пробуем разные форматы
+            formats = [
+                "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%dT%H:%M:%S",
+                "%I:%M %p ET",
+                "%I:%M%p ET",
+            ]
+
+            for fmt in formats:
+                try:
+                    if "ET" in game_time_str:
+                        # Eastern Time
+                        time_part = game_time_str.replace(" ET", "").replace("ET", "")
+                        dt = datetime.strptime(time_part, fmt.replace(" ET", "").replace("ET", ""))
+                        # Assume today's date
+                        dt = dt.replace(year=date.today().year, month=date.today().month, day=date.today().day)
+                        dt = dt.replace(tzinfo=ZoneInfo("America/New_York"))
+                    else:
+                        dt = datetime.strptime(game_time_str, fmt)
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+
+                    mst_time = dt.astimezone(MST)
+                    return mst_time.strftime("%I:%M %p MST")
+                except ValueError:
+                    continue
+
+            # Если не удалось распарсить, возвращаем как есть
+            return f"{game_time_str} (local)"
+        except Exception:
+            return game_time_str
+
+    def get_games_schedule_mst(self) -> List[Dict]:
+        """Возвращает расписание игр с временем в MST"""
+        schedule = []
+        for game in self.todays_games:
+            game_time = game.get('game_time', 'TBD')
+            mst_time = self.format_game_time_mst(game_time) if game_time != 'TBD' else 'TBD'
+
+            schedule.append({
+                'matchup': f"{game['away_team']} @ {game['home_team']}",
+                'time_mst': mst_time,
+                'original_time': game_time,
+                'game_id': game['game_id']
+            })
+
+        return schedule
+
 
 # =========================================================================
 # ТОЧКА ВХОДА
 # =========================================================================
+
+def select_trading_mode() -> str:
+    """Меню выбора режима торговли: Paper или Real"""
+    print("\n" + "=" * 50)
+    print("💰 SELECT TRADING MODE")
+    print("=" * 50)
+    print("\n  1. 📝 Paper Trading (виртуальные деньги)")
+    print("     - Безопасно для тестирования")
+    print("     - Никаких реальных ставок")
+    print("     - Полная симуляция")
+    print()
+    print("  2. 💵 Real Money (Kalshi API)")
+    print("     - РЕАЛЬНЫЕ ДЕНЬГИ!")
+    print("     - Требуется Kalshi аккаунт")
+    print("     - Риск потери средств")
+    print()
+
+    try:
+        mode_choice = input("Select mode [1-2, default=1]: ").strip()
+    except:
+        mode_choice = "1"
+
+    if mode_choice == "2":
+        print("\n" + "⚠️ " * 20)
+        print("⚠️  WARNING: REAL MONEY MODE SELECTED!")
+        print("⚠️  You are about to trade with REAL money.")
+        print("⚠️  Losses are possible and permanent.")
+        print("⚠️ " * 20)
+
+        try:
+            confirm = input("\nType 'I UNDERSTAND' to continue: ").strip()
+        except:
+            confirm = ""
+
+        if confirm != "I UNDERSTAND":
+            print("\n❌ Real money mode cancelled. Using Paper Trading.")
+            return "paper"
+
+        # Проверяем наличие API ключей
+        kalshi_key = os.getenv('KALSHI_API_KEY')
+        kalshi_secret = os.getenv('KALSHI_API_SECRET')
+
+        if not kalshi_key or not kalshi_secret:
+            print("\n❌ Kalshi API credentials not found!")
+            print("   Set KALSHI_API_KEY and KALSHI_API_SECRET in .env")
+            print("   Falling back to Paper Trading.")
+            return "paper"
+
+        print("\n✅ Real Money mode confirmed")
+        return "real"
+
+    print("\n✅ Paper Trading mode selected")
+    return "paper"
+
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
@@ -1204,22 +1533,43 @@ if __name__ == "__main__":
     print("  1. Run autonomous mode (24/7)")
     print("  2. Run single analysis cycle")
     print("  3. Show today's games")
-    print("  4. Exit")
+    print("  4. Check pending bets status")
+    print("  5. Exit")
     print()
-    
+
     try:
-        choice = input("Select option [1-4]: ").strip()
+        choice = input("Select option [1-5]: ").strip()
     except:
         choice = "1"
-    
+
+    if choice == "5":
+        print("Exiting...")
+        sys.exit(0)
+
+    # Показываем меню выбора режима для опций 1, 2
+    trading_mode = "paper"
+    if choice in ["1", "2"]:
+        trading_mode = select_trading_mode()
+
+    print(f"\n🎮 Trading Mode: {trading_mode.upper()}")
+    print("=" * 60)
+
     system = AutoBasketSystem()
-    
+
+    # Показываем статус pending ставок
+    pending_count = len([b for b in system.todays_bets if b.get('status') == 'pending'])
+    if pending_count > 0:
+        print(f"\n⏳ Found {pending_count} pending bets from previous session")
+        for bet in system.todays_bets:
+            if bet.get('status') == 'pending':
+                print(f"   • {bet.get('bet_team', 'Unknown')} @ {bet.get('odds', 0):.2f} - ${bet.get('amount', 0):.2f}")
+
     if choice == "1":
         system.run_forever()
-    
+
     elif choice == "2":
         system.run_daily_cycle()
-        
+
         # Ждем завершения игр
         print("\nPress Ctrl+C to stop monitoring and exit")
         try:
@@ -1228,13 +1578,44 @@ if __name__ == "__main__":
                 time.sleep(60)
         except KeyboardInterrupt:
             pass
-        
+
         system.run_learning_cycle()
         system.print_daily_report()
-    
+
     elif choice == "3":
         system.fetch_todays_games()
         system.print_games_summary()
-    
+
+    elif choice == "4":
+        # Показываем статус pending ставок и пытаемся их settle
+        print("\n" + "=" * 60)
+        print("⏳ PENDING BETS STATUS")
+        print("=" * 60)
+
+        pending = [b for b in system.todays_bets if b.get('status') == 'pending']
+        if not pending:
+            print("\n✅ No pending bets found")
+        else:
+            print(f"\nFound {len(pending)} pending bet(s):\n")
+            for bet in pending:
+                print(f"  🎯 {bet.get('away_team', '?')} @ {bet.get('home_team', '?')}")
+                print(f"     Bet: {bet.get('bet_team', '?')} @ {bet.get('odds', 0):.2f}")
+                print(f"     Amount: ${bet.get('amount', 0):.2f}")
+                print(f"     Placed: {bet.get('placed_at', '?')}")
+                print()
+
+            print("\n🔍 Checking for finished games...")
+            system.check_and_settle_bets()
+
+            # Показываем обновлённый статус
+            still_pending = len([b for b in system.todays_bets if b.get('status') == 'pending'])
+            settled = len(pending) - still_pending
+            if settled > 0:
+                print(f"\n✅ Settled {settled} bet(s)")
+            if still_pending > 0:
+                print(f"⏳ {still_pending} bet(s) still pending")
+
+            system.print_daily_report()
+
     else:
-        print("Exiting...")
+        print("Invalid option. Exiting...")
